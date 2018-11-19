@@ -1,21 +1,17 @@
 FROM ubuntu:16.04
+MAINTAINER Zi Wang  <isolationwyn@gmail.com>
 
-COPY os-requirement.sh .
+RUN apt-get update -y -q && apt-get upgrade -y -q \
+    && DEBIAN_FRONTEND=noninteractive \
+    && apt-get install --no-install-recommends -y -q curl build-essential ca-certificates git 
 
-RUN cp /dev/null /etc/apt/source.list \
-    # && bash os-requirement.sh \
-    && apt-get update  \
-    && apt-get upgrade -y -q \
-    && mkdir -p /goroot \
-    && apt-get install curl \
-       net-tools \
-    && curl https://storage.googleapis.com/golang/go1.11.1.linux-amd64.tar.gz | tar xvzf - -C /goroot --strip-components=1
+RUN curl -s https://storage.googleapis.com/golang/go1.11.1.linux-amd64.tar.gz| tar -v -C /usr/local -xz
 
-ENV GOROOT /goroot
-ENV GOPATH /gopath
-ENV PATH $GOROOT/bin:$GOPATH/bin:$PATH
-WORKDIR /gopath
+USER root
+
+ENV GOPATH /go
+ENV GOROOT /usr/local/go
+ENV PATH $PATH:/usr/local/go/bin
+
 COPY . .
-CMD ["bash"]
-
 
