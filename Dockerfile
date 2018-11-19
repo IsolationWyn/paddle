@@ -3,7 +3,7 @@ FROM ubuntu:16.04
 COPY os-requirement.sh .
 
 RUN cp /dev/null /etc/apt/source.list \
-    && bash os-requirement.sh \
+    # && bash os-requirement.sh \
     && apt-get update -y -q \
     && apt-get upgrade -y -q \
     && mkdir -p /goroot \
