@@ -53,6 +53,7 @@ func pivotRoot(root string) error {
 	为了使当前root和老root不在同一文件系统下, 重新mount root
 	bind mount 是把相同的内容换了一个挂载点的方法
 	*/
+	// 执行bind挂载, 使文件或者子目录在文件系统内的另一个点上可视 | 
 	if err := syscall.Mount(root, root, "bind", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("Mount rootfs to itself error: %v", err)
 	}
@@ -99,8 +100,11 @@ func setupMount() {
 	pivotRoot(pwd)
 
 	// mount proc
+	// 不允许在挂载的文件系统上执行程序 | 执行程序时，不遵照set-user-ID 和 set-group-ID位 | 不允许访问设备文件
 	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
 	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
 
+	// 执行程序时，不遵照set-user-ID 和 set-group-ID位 | 总是更新最后访问时间
+	// tmpfs 是一种基于内存的文件系统, 可以使用RAM或swap分区来存储
 	syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID|syscall.MS_STRICTATIME, "mode=755")
 }
