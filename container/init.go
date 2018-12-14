@@ -1,6 +1,7 @@
 package container
 
 import (
+	"path/filepath"
 	"os/exec"
 	"strings"
 	"io/ioutil"
@@ -20,8 +21,9 @@ func RunContainerInitProcess() error {
 	init进程读取了父进程传递过来的参数后, 在子进程内进行了执行, 这样就完成了将用户指定命令传递给子进程的操作
 	*/
 	
-	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
-	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+	// defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
+	// syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+	setupMount()
 
 	// 调用exec.LookPath, 可以在系统的PATH里面寻找命令的绝对路径
 	path, err := exec.LookPath(cmdArray[0])
@@ -59,7 +61,7 @@ func pivotRoot(root string) error {
 	}
 
 	// 创建 rootfs/.pivot_root 存储 old_root
-	pivotRoot := filepath.Join(root, ".pivot_root")
+	pivotDir := filepath.Join(root, ".pivot_root")
 	if err := os.Mkdir(pivotDir, 0777); err != nil {
 		return err
 	}

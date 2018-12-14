@@ -1,6 +1,6 @@
 linux_network/*
 .vscode/*
-
+dive/*
 # Prerequisites
 *.d
 
