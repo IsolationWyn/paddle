@@ -9,8 +9,8 @@ import (
 	"os"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
-	parent, writePipe := container.NewParentProcess(tty)
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string/) {
+	parent, writePipe := container.NewParentProcess(tty, volume)
 	if parent == nil {
 		log.Errorf("New parent process error")
 		return
@@ -29,7 +29,10 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig) {
 	// 对容器设置完限制之后, 初始化容器
 	sendInitCommand(comArray, writePipe)
 	parent.Wait()
-	// os.Exit(0)
+	mntURL := "/root/mnt"
+	rootURL := "/root/"
+	container.DeleteWorkSpace(rootURL, mntURL, volume)
+	os.Exit(0)
 }
 
 func sendInitCommand(comArray []string, writePipe *os.File) {
