@@ -1,12 +1,12 @@
-# Practise with <<Write My Own Docker>>
+# Practise
 
 ## Namespace
-* UTS Namespace: 主机名隔离
+* UTS Namespace: 主机名隔离
 * IPC Namespace: 进程间通信的隔离
-* PID Namespace: 进程隔离
-* Mount Namespace: 磁盘挂载点和文件系统的隔离
-* User Namespace: 用户隔离
-* Network Namespace: 网络栈隔离
+* PID Namespace: 进程隔离
+* Mount Namespace: 磁盘挂载点和文件系统的隔离
+* User Namespace: 用户隔离
+* Network Namespace: 网络栈隔离
 
 ## Mount flags
 * MS_BIND: 执行bind挂载, 使文件或者子目录在文件系统内的另一个点上可视
@@ -25,6 +25,7 @@
 * MNT_EXPIRE：将挂载点标志为过时。
 * MS_STRICTATIME: 总是更新最后访问时间(始于linux 2.6.30)，定义了此,那么MS_NOATIME和MS_RELATIME将会忽略。
 * MS_REC: 递归挂载, 跟MS_BIND配合
+
 
 ```go
 type SysProcAttr struct {
