@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	/*
 	这里是父进程,也就是当前进程执行的内容
 	1. 这里的/proc/self/exe 调用中, /proc/self指的是当前运行进程自己的环境, exec 其实就是调用了自己
@@ -25,6 +25,8 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 		return nil, nil
 	}
 	cmd := exec.Command("/proc/self/exe", "init")
+
+	// 操作系统特定的创建属性, 用于控制进程中相关属性
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | 
 				syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
@@ -39,7 +41,7 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	cmd.ExtraFiles = []*os.File{readPipe}
 	mntURL := "/root/mnt/"
 	rootURL := "/root/"
-	NewWorkSpace(rootURL, mntURL)
+	NewWorkSpace(rootURL, mntURL, volume)
 	cmd.Dir = mntURL
 	return cmd, writePipe
 }
@@ -84,6 +86,7 @@ func CreateReadOnlyLayer(rootURL string) {
 	busyboxURL := rootURL + "/busybox"
 	busyboxTarURL := rootURL + "/busybox.tar"
 	exist, err := PathExists(busyboxURL)
+
 	if err != nil {
 		log. Infof ("Fail to judge whether dir %s exists . %v", busyboxURL, err)
 	}
@@ -118,14 +121,12 @@ func CreateMountPoint(rootURL string, mntURL string) {
 }
 
 func PathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
+	if _, err := os.Stat(path); err == nil {
+		if os.IsNotExist(err) {
+			return false, err
+		}
 	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
+	return true, nil
 }
 
 // 挂载数据卷的过程
@@ -165,11 +166,12 @@ func DeleteWorkSpace(rootURL string, mntURL string, volume string) {
 		volumeURLs := volumeUrlExtract(volume)
 		length := len(volumeURLs)
 		if(length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "") {
-			DeleteMountPoint(rootURL, mntURL, volume)
+			DeleteMountPointWithVolume(rootURL, mntURL, volumeURLs)
 		} else {
 			DeleteMountPoint(rootURL, mntURL)
 		}
 	}
+	DeleteWriteLayer(rootURL)
 }
 
 func DeleteMountPointWithVolume(rootURL string, mntURL string, volumeURLs []string) {
@@ -177,7 +179,20 @@ func DeleteMountPointWithVolume(rootURL string, mntURL string, volumeURLs []stri
 	cmd := exec.Command("umount", containerUrl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run()
+	if err := cmd.Run(); err != nil {
+		log.Errorf("Umount volume failed. %v", err)
+	}
+	
+	cmd = exec.Command("umount", mntURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Errorf("Umount mountpoint failed. %v", err)
+	}
+
+	if err := os.RemoveAll(mntURL); err != nil {
+		log.Infof("Remove mountpoint dir %s error %v", mntURL, err)
+	}
 }
 
 func DeleteMountPoint(rootURL string, mntURL string) {
@@ -193,8 +208,8 @@ func DeleteMountPoint(rootURL string, mntURL string) {
 }
 
 func DeleteWriteLayer(rootURL string) {
-	writeURL := rootURL + "writeLayer/"
+	writeURL := rootURL + "/writeLayer"
 	if err := os.RemoveAll(writeURL); err != nil {
-		log.Errorf("Remove dir %s error %v", writeURL, err)
+		log.Errorf("Remove writeLayer dir %s error %v", writeURL, err)
 	}
 }

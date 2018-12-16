@@ -25,3 +25,29 @@
 * MNT_EXPIRE：将挂载点标志为过时。
 * MS_STRICTATIME: 总是更新最后访问时间(始于linux 2.6.30)，定义了此,那么MS_NOATIME和MS_RELATIME将会忽略。
 * MS_REC: 递归挂载, 跟MS_BIND配合
+
+```go
+type SysProcAttr struct {
+	Chroot       string         // Chroot.
+	Credential   *Credential    // Credential.
+	Ptrace       bool           // Enable tracing.
+	Setsid       bool           // Create session.
+	Setpgid      bool           // Set process group ID to Pgid, or, if Pgid == 0, to new pid.
+	Setctty      bool           // Set controlling terminal to fd Ctty (only meaningful if Setsid is set)
+	Noctty       bool           // Detach fd 0 from controlling terminal
+	Ctty         int            // Controlling TTY fd
+	Foreground   bool           // Place child's process group in foreground. (Implies Setpgid. Uses Ctty as fd of controlling TTY)
+	Pgid         int            // Child's process group ID if Setpgid.
+	Pdeathsig    Signal         // Signal that the process will get when its parent dies (Linux only)
+	Cloneflags   uintptr        // Flags for clone calls (Linux only)
+	Unshareflags uintptr        // Flags for unshare calls (Linux only)
+	UidMappings  []SysProcIDMap // User ID mappings for user namespaces.
+	GidMappings  []SysProcIDMap // Group ID mappings for user namespaces.
+	// GidMappingsEnableSetgroups enabling setgroups syscall.
+	// If false, then setgroups syscall will be disabled for the child process.
+	// This parameter is no-op if GidMappings == nil. Otherwise for unprivileged
+	// users this should be set to false for mappings work.
+	GidMappingsEnableSetgroups bool
+	AmbientCaps                []uintptr // Ambient capabilities (Linux only)
+}
+```
