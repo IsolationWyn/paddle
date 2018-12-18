@@ -9,9 +9,9 @@ RUN apt-get update -y -q && apt-get upgrade -y -q \
 RUN curl -s https://storage.googleapis.com/golang/go1.11.1.linux-amd64.tar.gz| tar -v -C /usr/local -xz
 
 USER root
-
 ENV GOPATH /go
 ENV GOROOT /usr/local/go
 ENV PATH $PATH:/usr/local/go/bin
 WORKDIR ${GOPATH}
 COPY . .
+COPY busybox.tar /root

@@ -39,9 +39,9 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	// 传入管道文件读取端的句柄
 	// 一个进程默认有三个文件描述符(标准输入标准输出标准错误)
 	cmd.ExtraFiles = []*os.File{readPipe}
-	mntURL := "/root/mnt/"
-	rootURL := "/root/"
-	NewWorkSpace(rootURL, mntURL, volume)
+	mntURL := "/root/busybox/"
+	// TODO: rootURL := "/root/"
+	// NewWorkSpace(rootURL, mntURL, volume)
 	cmd.Dir = mntURL
 	return cmd, writePipe
 }
@@ -149,6 +149,7 @@ func MountVolume(rootURL string, mntURL string, volumeURLs []string) {
 	// 把宿主机文件目录挂载到容器挂载点
 	dirs := "dirs=" + parentUrl
 	cmd := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", containerVolumeURL)
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

@@ -60,15 +60,16 @@ func pivotRoot(root string) error {
 		return fmt.Errorf("Mount rootfs to itself error: %v", err)
 	}
 
-	// 创建 rootfs/.pivot_root 存储 old_root
+	// 创建 rootfs/.pivot_root 存储 old_root 	
 	pivotDir := filepath.Join(root, ".pivot_root")
+	log.Info(pivotDir)
 	if err := os.Mkdir(pivotDir, 0777); err != nil {
-		return err
+		return fmt.Errorf("%v", err)
 	}
 
 	// pivot_root 到新的rootfs, 现在老的 old_root 是挂载在rootfs/.pivot_root
 	// 挂载点现在依然可以在mount命令中看到
-	if err := syscall.Chdir("/"); err != nil {
+	if err := syscall.PivotRoot(root, pivotDir); err != nil {
 		return fmt.Errorf("pivot_root %v", err)
 	}
 
@@ -80,7 +81,7 @@ func pivotRoot(root string) error {
 	pivotDir = filepath.Join("/", ".pivot_root")
 	// umount rootfs/.pivot
 	if err := syscall.Unmount(pivotDir, syscall.MNT_DETACH); err != nil {
-		return fmt.Errorf("unmount pivot_root dir %var", err)
+		return fmt.Errorf("unmount pivot_root dir %v", err)
 	}
 
 	// 删除临时文件夹
@@ -99,7 +100,9 @@ func setupMount() {
 		return 
 	}
 	log.Infof("Current location is %s", pwd)
-	pivotRoot(pwd)
+	if err := pivotRoot(pwd); err != nil {
+		log.Error("fail to pivot_root ", err)
+	}
 
 	// mount proc
 	// 不允许在挂载的文件系统上执行程序 | 执行程序时，不遵照set-user-ID 和 set-group-ID位 | 不允许访问设备文件
