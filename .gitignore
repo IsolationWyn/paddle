@@ -2,6 +2,7 @@ linux_network
 .vscode
 dive
 ui
+paddle
 
 # Prerequisites
 *.d

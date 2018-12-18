@@ -4,7 +4,7 @@ import (
 	"github.com/IsolationWyn/paddle/cgroups/subsystems"
 	"github.com/IsolationWyn/paddle/container"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"	
 )
 
@@ -31,8 +31,8 @@ var runCommand = cli.Command{
 		},		
 		cli.BoolFlag{
 			Name: "v",
-			Usage: "volume"
-		}
+			Usage: "volume",
+		},
 	},
 	Action: func(context *cli.Context) error {
 		if len(context.Args()) < 1 {
@@ -49,8 +49,8 @@ var runCommand = cli.Command{
 			CpuShare: context.String("cpushare"),
 		}
 
-		volume := context.Bool("ti")
-		Run(tty, cmdArray, resConf)
+		volume := context.String("volume")
+		Run(tty, cmdArray, resConf, volume)
 		return nil
 	},
 }

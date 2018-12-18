@@ -1,6 +1,5 @@
-# Practise
+# 容器：提供一个与宿主机系统共享内核但与系统中的其它进程资源相隔离的执行环境
 
-## Namespace
 * UTS Namespace: 主机名隔离
 * IPC Namespace: 进程间通信的隔离
 * PID Namespace: 进程隔离

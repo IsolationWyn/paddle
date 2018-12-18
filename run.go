@@ -5,11 +5,11 @@ import (
 	"github.com/IsolationWyn/paddle/cgroups"
 	"github.com/IsolationWyn/paddle/cgroups/subsystems"
 	"github.com/IsolationWyn/paddle/container"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string/) {
+func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, volume string) {
 	parent, writePipe := container.NewParentProcess(tty, volume)
 	if parent == nil {
 		log.Errorf("New parent process error")
