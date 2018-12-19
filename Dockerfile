@@ -1,7 +1,8 @@
 FROM ubuntu:16.04
 MAINTAINER Zi Wang  <isolationwyn@gmail.com>
 
-RUN DEBIAN_FRONTEND=noninteractive \
+RUN apt-get update -y -q && apt-get upgrade -y -q \
+    && DEBIAN_FRONTEND=noninteractive \
     && apt-get install --no-install-recommends -y -q curl build-essential ca-certificates git \
     aufs-tools linux-image-extra-virtual psmisc criu
 
