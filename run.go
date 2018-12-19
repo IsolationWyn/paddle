@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"fmt"
 	"math/rand"
 	"encoding/json"
@@ -127,4 +128,42 @@ func deleteContainerInfo(containerId string) {
 	if err := os.RemoveAll(dirURL); err != nil {
 		log.Errorf("Remove dir %s error %v", dirURL, err)
 	}
+}
+func ListContainers() {
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, "")
+	dirURL := dirURL[:len(dirURL)-1]
+	// 读取	/var/run/paddle下所有文件
+	files, err := ioutil.ReadDir(dirURL)
+	if err != nil {
+		log.Errorf("Read dir %s error %v", dirURL, err)
+		return
+	}
+
+	var containers []*container.ContainerInfo
+	// 遍历该文件下的所有文件
+	for _, file := range files {
+		// 根据容器配置文件获取对应的信息, 然后转换成容器信息的对象
+		tmpContainer, err := getContainerInfo(file)
+	}
+}
+
+func getContainerInfo(file os.FileInfo) (*container.ContainerInfo, error) {
+	// 获取文件名
+	containerName := file.Name()
+	// 根据文件名生成文件的绝对路径
+	configFileDir := fmt.Sprintf(container.DefaultInfoLocation, containerName)
+	configFilePath = configFileDir + container.ConfigName
+	// 读取config.json 文件内的容器信息
+	content, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		log.Errorf("Read file %s error %v", configFileDir, err)
+		return nil, err
+	}
+	var containerInfo container.ContainerInfo
+	// 将 json 文件信息反序列化成容器信息对象
+	if err := json.Unmarshal(content, &containerInfo); err != nil {
+		log.Errorf("Json unmarshal error %v", err)
+	}
+
+	return &containerInfo, nil
 }

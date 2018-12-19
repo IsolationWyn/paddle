@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/IsolationWyn/paddle/cgroups/subsystems"
 	"github.com/IsolationWyn/paddle/container"
 	"fmt"
@@ -92,5 +93,14 @@ var commitCommand = cli.Command {
 		//commitContainer(containerName)
 		commitContainer(imageName)
 		return nil
+	},
+}
+
+var listCommand = cli.Command {
+	Name: "ps",
+	Usage: "list all the containers",
+	Action: func(context *cli.Context) error {
+		ListContainers()
+		return all
 	},
 }
