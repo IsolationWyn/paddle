@@ -33,6 +33,14 @@ var runCommand = cli.Command{
 			Name: "v",
 			Usage: "volume",
 		},
+		cli.BoolFlag{
+			Name: "d",
+			Usage: "detach container",
+		},
+		cli.StringFlag{
+			Name: "name",
+			Usage: "container name",
+		},
 	},
 	Action: func(context *cli.Context) error {
 		if len(context.Args()) < 1 {
@@ -52,12 +60,13 @@ var runCommand = cli.Command{
 		volume := context.String("volume")
 		createTty := context.Bool("ti")
 		detach := context.Bool("d")
+		containerName := context.String("name")
 
 		if createTty && detach {
 			return fmt.Errorf("ti and d paramter can not both provided")
 		}
 		log.Infof("createTty %v", createTty)
-		Run(tty, cmdArray, resConf, volume)
+		Run(tty, cmdArray, resConf, volume, containerName)
 		return nil
 	},
 }

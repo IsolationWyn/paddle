@@ -8,6 +8,26 @@ import (
 	"os"
 )
 
+var (
+	RUNNING 				string = "running"
+	STOP 					string = "stopped"
+	Exit					string = "exited"
+	DefaultInfoLocation		string = "/var/run/paddle/%s/"
+	ConfigName				string = "config.json"
+)
+
+type ContainerInfo struct {
+	Pid			string	`json:"pid"`		// 容器的init进程咋宿主机上的PID
+	Id			string  `json:"id"`			// 容器ID
+	Name		string	`json:"name"`		// 容器名
+	Command		string 	`json:command`  	// 容器内init进程的运行命令
+	CreatedTime string	`json:createTime`	// 创建时间
+	Status		string	`json:"status"`		// 容器的状态
+}
+
+
+
+
 func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	/*
 	这里是父进程,也就是当前进程执行的内容
