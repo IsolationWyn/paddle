@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/IsolationWyn/paddle/cgroups/subsystems"
 	"github.com/IsolationWyn/paddle/container"
 	"fmt"
@@ -101,6 +100,6 @@ var listCommand = cli.Command {
 	Usage: "list all the containers",
 	Action: func(context *cli.Context) error {
 		ListContainers()
-		return all
+		return nil
 	},
 }

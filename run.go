@@ -1,6 +1,7 @@
 package main
 
 import (
+	"text/tabwriter"
 	"io/ioutil"
 	"fmt"
 	"math/rand"
@@ -131,7 +132,7 @@ func deleteContainerInfo(containerId string) {
 }
 func ListContainers() {
 	dirURL := fmt.Sprintf(container.DefaultInfoLocation, "")
-	dirURL := dirURL[:len(dirURL)-1]
+	dirURL = dirURL[:len(dirURL)-1]
 	// 读取	/var/run/paddle下所有文件
 	files, err := ioutil.ReadDir(dirURL)
 	if err != nil {
@@ -144,6 +145,30 @@ func ListContainers() {
 	for _, file := range files {
 		// 根据容器配置文件获取对应的信息, 然后转换成容器信息的对象
 		tmpContainer, err := getContainerInfo(file)
+		if err != nil {
+			log.Errorf("Get container info error %v", err)
+			continue
+		}
+		containers = append(containers, tmpContainer)
+	}
+
+	// 使用 tabwriter.NewWriter 在控制台打印出容器信息
+	w := tabwriter.NewWriter(os.Stdout, 12, 1, 3, ' ', 0)
+	// 控制台输出信息列
+	fmt.Fprint(w, "ID\tNAME\tPID\tSTATUS\tCOMMAND\tCREATED\n")
+	for _, item := range containers {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Id,
+			item.Name,
+			item.Pid,
+			item.Status,
+			item.Command,
+			item.CreatedTime)
+	}
+	// 刷新标准输出流缓冲区, 将容器列表打印出来
+	if err := w.Flush(); err != nil {
+		log.Errorf("Flush error %v", err)
+		return
 	}
 }
 
@@ -152,7 +177,7 @@ func getContainerInfo(file os.FileInfo) (*container.ContainerInfo, error) {
 	containerName := file.Name()
 	// 根据文件名生成文件的绝对路径
 	configFileDir := fmt.Sprintf(container.DefaultInfoLocation, containerName)
-	configFilePath = configFileDir + container.ConfigName
+	configFilePath := configFileDir + container.ConfigName
 	// 读取config.json 文件内的容器信息
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
