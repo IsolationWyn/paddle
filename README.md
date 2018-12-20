@@ -1,11 +1,39 @@
 # 容器：提供一个与宿主机系统共享内核但与系统中的其它进程资源相隔离的执行环境
 
+# Namespace
 * UTS Namespace: 主机名隔离
 * IPC Namespace: 进程间通信的隔离
 * PID Namespace: 进程隔离
 * Mount Namespace: 磁盘挂载点和文件系统的隔离
 * User Namespace: 用户隔离
 * Network Namespace: 网络栈隔离
+
+# Linux 支持的subsystem
+* cpu (since Linux 2.6.24; CONFIG_CGROUP_SCHED)     
+用来限制cgroup的CPU使用率。
+* cpuacct (since Linux 2.6.24; CONFIG_CGROUP_CPUACCT)           
+统计cgroup的CPU的使用率。 
+* cpuset (since Linux 2.6.24; CONFIG_CPUSETS)           
+绑定cgroup到指定CPUs和NUMA节点。
+* memory (since Linux 2.6.25; CONFIG_MEMCG)         
+统计和限制cgroup的内存的使用率，包括process memory, kernel memory, 和swap。
+* devices (since Linux 2.6.26; CONFIG_CGROUP_DEVICE)            
+限制cgroup创建(mknod)和访问设备的权限。
+* freezer (since Linux 2.6.28; CONFIG_CGROUP_FREEZER)               
+* suspend和restore一个cgroup中的所有进程。
+
+* net_cls (since Linux 2.6.29; CONFIG_CGROUP_NET_CLASSID)           
+将一个cgroup中进程创建的所有网络包加上一个classid标记，用于tc和iptables。 只对发出去的网络包生效，对收到的网络包不起作用。
+* blkio (since Linux 2.6.33; CONFIG_BLK_CGROUP)         
+限制cgroup访问块设备的IO速度。
+* perf_event (since Linux 2.6.39; CONFIG_CGROUP_PERF)               
+对cgroup进行性能监控
+* net_prio (since Linux 3.3; CONFIG_CGROUP_NET_PRIO)                  
+针对每个网络接口设置cgroup的访问优先级。
+* hugetlb (since Linux 3.5; CONFIG_CGROUP_HUGETLB)              
+限制cgroup的huge pages的使用量。
+* pids (since Linux 4.3; CONFIG_CGROUP_PIDS)
+限制一个cgroup及其子孙cgroup中的总进程数。
 
 ## Mount flags
 * MS_BIND: 执行bind挂载, 使文件或者子目录在文件系统内的另一个点上可视

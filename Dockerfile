@@ -12,5 +12,3 @@ ENV GOPATH /go
 ENV GOROOT /usr/local/go
 ENV PATH $PATH:/usr/local/go/bin
 WORKDIR ${GOPATH}
-
-COPY busybox /root
