@@ -20,8 +20,7 @@
 * devices (since Linux 2.6.26; CONFIG_CGROUP_DEVICE)            
 限制cgroup创建(mknod)和访问设备的权限。
 * freezer (since Linux 2.6.28; CONFIG_CGROUP_FREEZER)               
-* suspend和restore一个cgroup中的所有进程。
-
+suspend和restore一个cgroup中的所有进程。
 * net_cls (since Linux 2.6.29; CONFIG_CGROUP_NET_CLASSID)           
 将一个cgroup中进程创建的所有网络包加上一个classid标记，用于tc和iptables。 只对发出去的网络包生效，对收到的网络包不起作用。
 * blkio (since Linux 2.6.33; CONFIG_BLK_CGROUP)         
