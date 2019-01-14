@@ -30,8 +30,6 @@ type ContainerInfo struct {
 }
 
 
-
-
 func NewParentProcess(tty bool, containerName, imageName, volume string) (*exec.Cmd, *os.File) {
 	/*
 	这里是父进程,也就是当前进程执行的内容
@@ -61,12 +59,15 @@ func NewParentProcess(tty bool, containerName, imageName, volume string) (*exec.
 		cmd.Stderr = os.Stderr
 	} else {
 		// 生成容器对应目录的container.log文件
+		if containerName == "" {
+			containerName = "wyn"
+		}
 		dirURL := fmt.Sprintf(DefaultInfoLocation, containerName)
 		if err := os.MkdirAll(dirURL, 0622); err != nil {
 			log.Errorf("NewParentProcess mkdir %s error %v", dirURL, err)
 			return nil, nil
 		}
-		// /var/run/paddle/{{containerID}}/container.log
+		// /var/run/paddle/{{containerName}}/container.log
 		stdLogFilePath := dirURL + ContainerLogFile
 		stdLogFile, err := os.Create(stdLogFilePath)
 		if err != nil {

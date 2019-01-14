@@ -105,8 +105,8 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 		return "", err
 	}
 
-	// /var/run/paddle/{{containerName}}//config.json
-	fileName := dirUrl + "/" + container.ConfigName
+	// /var/run/paddle/{{containerName}}/config.json
+	fileName := dirUrl + container.ConfigName
 	// 创建配置文件 config.json
 	file, err := os.Create(fileName)
 	defer file.Close()
@@ -123,10 +123,10 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 	return containerName, nil
 }
 
-func deleteContainerInfo(containerId string) {
+func deleteContainerInfo(containerName string) {
 	// 删除容器信息 
 	// /var/run/paddle/{{containerId}}
-	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerId)
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	if err := os.RemoveAll(dirURL); err != nil {
 		log.Errorf("Remove dir %s error %v", dirURL, err)
 	}
@@ -173,10 +173,9 @@ func ListContainers() {
 	}
 }
 
-
-func logContainer(containerID string) {
+func logContainer(containerName string) {
 	// 找到文件夹的位置
-	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerID)
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	logFileLocation := dirURL + container.ContainerLogFile
 	// 打开日志文件
 	file, err := os.Open(logFileLocation)

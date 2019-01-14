@@ -54,7 +54,6 @@ var runCommand = cli.Command{
 		for _, arg := range context.Args() {
 			cmdArray = append(cmdArray, arg)
 		}
-		tty := context.Bool("ti")
 		resConf := &subsystems.ResourceConfig{
 			MemoryLimit: context.String("m"),
 			CpuSet: context.String("cpuset"),
@@ -72,7 +71,7 @@ var runCommand = cli.Command{
 		}
 		log.Infof("createTty %v", createTty)
 		
-		Run(tty, cmdArray, resConf, containerName, imageName, volume)
+		Run(createTty, cmdArray, resConf, containerName, imageName, volume)
 		return nil
 	},
 }

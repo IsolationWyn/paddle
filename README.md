@@ -78,3 +78,27 @@ type SysProcAttr struct {
 	AmbientCaps                []uintptr // Ambient capabilities (Linux only)
 }
 ```
+
+
+* cgroup.clone_children
+
+这个文件只对cpuset（subsystem）有影响，当该文件的内容为1时，新创建的cgroup将会继承父cgroup的配置，即从父cgroup里面拷贝配置文件来初始化新cgroup，可以参考这里
+
+* cgroup.procs
+
+当前cgroup中的所有进程ID，系统不保证ID是顺序排列的，且ID有可能重复
+
+* cgroup.sane_behavior
+
+* notify_on_release
+
+该文件的内容为1时，当cgroup退出时（不再包含任何进程和子cgroup），将调用release_agent里面配置的命令。新cgroup被创建时将默认继承父cgroup的这项配置。
+
+* release_agent
+
+里面包含了cgroup退出时将会执行的命令，系统调用该命令时会将相应cgroup的相对路径当作参数传进去。 注意：这个文件只会存在于root cgroup下面，其他cgroup里面不会有这个文件。
+
+* tasks
+
+当前cgroup中的所有线程ID，系统不保证ID是顺序排列的
+
