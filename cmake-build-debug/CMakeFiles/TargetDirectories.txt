@@ -1,6 +1,0 @@
-/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/cmake-build-debug/CMakeFiles/paddle.dir
-/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/cmake-build-debug/nsenter/CMakeFiles/rebuild_cache.dir
-/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/cmake-build-debug/nsenter/CMakeFiles/edit_cache.dir
-/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/cmake-build-debug/nsenter/CMakeFiles/nsenter.dir

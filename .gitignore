@@ -3,10 +3,11 @@ linux_network
 dive
 ui
 paddle
-
+.idea/*
+cmake-build-debug/*
 # Prerequisites
 *.d
-
+*.out
 # Object files
 *.o
 *.ko
