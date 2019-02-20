@@ -25,7 +25,7 @@ func (s *CpuSubSystem) Set(cgroupPath string, res *ResourceConfig) error {
 
 func (s *CpuSubSystem) Remove(cgroupPath string) error {
 	if subsysCgroupPath, err := GetCgroupPath(s.Name(), cgroupPath, false); err == nil {
-		return os.RemoveAll(subsysCgroupPath)
+		return os.Remove(subsysCgroupPath)
 	} else {
 		return err
 	}

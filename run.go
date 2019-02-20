@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"text/tabwriter"
 	"io/ioutil"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"os"
 )
 
-func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, containerName, imageName, volume string) {
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerName, imageName, volume string) {
 	parent, writePipe := container.NewParentProcess(tty, containerName, imageName, volume)
 	if parent == nil {
 		log.Errorf("New parent process error")
@@ -24,10 +25,14 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, containerN
 	}
 	if err := parent.Start(); err != nil {
 		log.Error(err)
+		return
+	} 
+	if containerName == "" {
+		containerName = "wyn"
 	}
 
 	// 创建cgroup manager, 并通过调用set和apply设置资源限制并使限制在容器上生效
-	cgroupManager := cgroups.NewCgroupManager("paddle")
+	cgroupManager := cgroups.NewCgroupManager(containerName)
 	defer cgroupManager.Destroy()
 	// 设置资源限制
 	cgroupManager.Set(res)
@@ -40,12 +45,12 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, containerN
 	// container.DeleteWorkSpace(rootURL, mntURL, volume)
 
 	// 记录容器信息
-	containerName, err := recordContainerInfo(parent.Process.Pid, comArray, containerName)
+	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName)
 	if err != nil {
 		log.Errorf("Record container info error %v", err)
 		return
 	}
-	sendInitCommand(comArray, writePipe)
+	sendInitCommand(cmdArray, writePipe)
 	
 	if tty {
 		parent.Wait()
@@ -53,8 +58,8 @@ func Run(tty bool, comArray []string, res *subsystems.ResourceConfig, containerN
 	}
 }
 
-func sendInitCommand(comArray []string, writePipe *os.File) {
-	command := strings.Join(comArray, " ")
+func sendInitCommand(cmdArray []string, writePipe *os.File) {
+	command := strings.Join(cmdArray, " ")
 	log.Infof("command all is %s", command)
 	writePipe.WriteString(command)
 	writePipe.Close()
@@ -76,9 +81,6 @@ func recordContainerInfo(containerPID int, commandArray []string, containerName 
 	createTime := time.Now().Format("2006-01-02 15:04:05")
 	command := strings.Join(commandArray, "")
 	// 如果没有指定容器名, 那么就叫"深海の女の子" (′゜ω。‵)
-	if containerName == "" {
-		containerName = "wyn"
-	}
 	// 生成容器信息的结构体实例
 	containerInfo := &container.ContainerInfo {
 		Id:				id,
@@ -192,4 +194,48 @@ func logContainer(containerName string) {
 	}
 	// 使用fmt.Fprint函数将读出来的内容都输入到标准输出, 也就是控制台上
 	fmt.Fprint(os.Stdout, string(content))
+}
+
+func getContainerPidByName(containerName string) (string, error) {
+	// 先拼接除存储容器信息的路径
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
+	configFilePath := dirURL + container.ConfigName
+	contentBytes, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		return "", err
+	}
+	var containerInfo container.ContainerInfo
+	// 将文件内容反序列化成容器信息对象, 然后返回对应的PID
+	if err := json.Unmarshal(contentBytes, &containerInfo); err != nil {
+		return "", err
+	}
+	return containerInfo.Pid, nil
+}
+
+const ENV_EXEC_PID = "paddle_pid"
+const ENV_EXEC_CMD = "paddle_cmd"
+
+func ExecContainer(containerName string, comArray []string) {
+	// 根据传递过来的容器名获取宿主机对应的PID
+	pid, err := getContainerPidByName(containerName)
+	if err != nil {
+		log.Errorf("Exec container getContainerPidByName %s error %v", containerName, err)
+		return
+	}
+	cmdStr := strings.Join(comArray, " ")
+	log.Infof("container pid %s", pid)
+	log.Infof("command %s", cmdStr)
+
+	// fork出一个进程, 获取环境变量
+	cmd := exec.Command("/proc/self/exe", "exec")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	os.Setenv(ENV_EXEC_PID, pid)
+	os.Setenv(ENV_EXEC_CMD, cmdStr)
+
+	if err := cmd.Run(); err != nil {
+		log.Errorf("Exec container %s error %v", containerName, err)
+	}
 }

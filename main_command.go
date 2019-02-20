@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"github.com/IsolationWyn/paddle/cgroups/subsystems"
 	"github.com/IsolationWyn/paddle/container"
 	"fmt"
@@ -118,6 +119,29 @@ var logCommand = cli.Command {
 		}
 		containerName := context.Args().Get(0)
 		logContainer(containerName)
+		return nil
+	},
+}
+
+var execCommand = cli.Command{
+	Name: "exec",
+	Usage: "exec a command into container",
+	Action: func(context *cli.Context) error {
+		// This is for callback
+		if os.Getenv(ENV_EXEC_PID) != "" {
+			log.Infof("pid callback pid %s", os.Getgid())
+			return nil
+		}
+		if len(context.Args()) < 2 {
+			return fmt.Errorf("Missing container name or command")
+		}
+		containerName := context.Args().Get(0)
+		var commandArray []string
+		// 将除了容器名之外的参数当做需要执行的命令处理
+		for _, arg := range context.Args().Tail() {
+			commandArray = append(commandArray, arg)
+		}
+		ExecContainer(containerName, commandArray)
 		return nil
 	},
 }

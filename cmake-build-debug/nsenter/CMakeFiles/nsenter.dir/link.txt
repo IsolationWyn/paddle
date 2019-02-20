@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libnsenter.a  CMakeFiles/nsenter.dir/nsenter.cc.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libnsenter.a

@@ -34,6 +34,7 @@ func RunContainerInitProcess() error {
 	log.Infof("Find path %s", path)
 	if err := syscall.Exec(path, cmdArray[0:], os.Environ()); err != nil {
 		log.Errorf(err.Error())
+		return err
 	}
 	return nil
 }

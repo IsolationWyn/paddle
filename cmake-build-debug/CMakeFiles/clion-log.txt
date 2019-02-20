@@ -1,0 +1,4 @@
+Cannot generate into /Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle
+It is already used for project /Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle/nsenter
+
+Please either delete it manually or select another generation directory
