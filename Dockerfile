@@ -16,6 +16,7 @@ ENV GOROOT /usr/local/go
 ENV PATH $PATH:/usr/local/go/bin
 WORKDIR ${GOPATH}
 
-RUN go get -u github.com/go-delve/delve/cmd/dlv
+RUN go get -u github.com/go-delve/delve/cmd/dlv \
+    && echo 'export PATH="$PATH:$GOROOT/bin:$GOBIN:/go/bin"' >> /root/.bashrc
 
 CMD ["dlv", "debug", "--headless", "--listen=:2345", "--log"]
