@@ -5,7 +5,7 @@ RUN apt-get update -y -q && apt-get upgrade -y -q \
     && DEBIAN_FRONTEND=noninteractive \
     && apt-get install --no-install-recommends -y -q curl build-essential ca-certificates git \
     aufs-tools linux-image-extra-virtual psmisc criu vim sudo tree net-tools\
-    && curl -s https://storage.googleapis.com/golang/go1.11.1.linux-amd64.tar.gz| tar -v -C /usr/local -xz\
+    && curl -s https://storage.googleapis.com/golang/go1.11.1.linux-amd64.tar.gz| tar -v -C /usr/local -xz
 
 EXPOSE 2345
 
