@@ -19,6 +19,7 @@ func main() {
 		listCommand,
 		logCommand,
 		execCommand,
+		networkCommand,
 	}
 
 	app.Before = func(context *cli.Context) error {

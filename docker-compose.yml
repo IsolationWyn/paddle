@@ -1,0 +1,18 @@
+services:
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    expose:
+      - "6379"
+  paddle:
+    build: .
+    security_opt:
+      - seccomp:unconfined
+    entrypoint: dlv debug /go/src/github.com/IsolationWyn/paddle -l 0.0.0.0:2345 --headless=true --log=true -- server
+    volumes:
+      - .:/
+    ports:
+      - "2345:2345"
+    expose:
+      - "2345"

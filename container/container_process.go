@@ -27,6 +27,7 @@ type ContainerInfo struct {
 	Command		string 	`json:command`  	// 容器内init进程的运行命令
 	CreatedTime string	`json:createTime`	// 创建时间
 	Status		string	`json:"status"`		// 容器的状态
+	PortMapping []string `json:"portmapping"` //端口映射
 }
 
 
