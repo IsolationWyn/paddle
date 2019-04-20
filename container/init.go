@@ -21,8 +21,6 @@ func RunContainerInitProcess() error {
 	init进程读取了父进程传递过来的参数后, 在子进程内进行了执行, 这样就完成了将用户指定命令传递给子进程的操作
 	*/
 	
-	// defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
-	// syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
 	setupMount()
 
 	// 调用exec.LookPath, 可以在系统的PATH里面寻找命令的绝对路径
@@ -41,6 +39,7 @@ func RunContainerInitProcess() error {
 
 func readUserCommand() []string {
 	pipe := os.NewFile(uintptr(3), "pipe")
+	defer pipe.Close()
 	msg, err := ioutil.ReadAll(pipe)
 	if err != nil {
 		log.Errorf("init read pipe error %v", err)
@@ -49,7 +48,6 @@ func readUserCommand() []string {
 	msgStr := string(msg)
 	return strings.Split(msgStr, " ")
 }
-
 
 func pivotRoot(root string) error {
 	/**
@@ -65,7 +63,7 @@ func pivotRoot(root string) error {
 	pivotDir := filepath.Join(root, ".pivot_root")
 
 	if err := os.Mkdir(pivotDir, 0777); err != nil {
-		return fmt.Errorf("%v", err)
+		return err
 	}
 
 	// pivot_root 到新的rootfs, 现在老的 old_root 是挂载在rootfs/.pivot_root
@@ -108,9 +106,16 @@ func setupMount() {
 	// mount proc
 	// 不允许在挂载的文件系统上执行程序 | 执行程序时，不遵照set-user-ID 和 set-group-ID位 | 不允许访问设备文件
 	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
-	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+	err = syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+	if err != nil {
+		log.Error("Mount proc error %v", err)
+	}
 
 	// 执行程序时，不遵照set-user-ID 和 set-group-ID位 | 总是更新最后访问时间
-	// tmpfs 是一种基于内存的文件系统, 可以使用RAM或swap分区来存储
-	syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID|syscall.MS_STRICTATIME, "mode=755")
+	// tmpfs 是一种基于内存的文件系统, 可以使用RAM或swap分区来存储\
+	
+	err = syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID|syscall.MS_STRICTATIME, "mode=755")
+	if err != nil {
+		log.Error("Mount proc error %v", err)
+	}
 }

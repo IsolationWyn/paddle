@@ -17,8 +17,8 @@ import (
 	"os"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerName, imageName, volume string) {
-	parent, writePipe := container.NewParentProcess(tty, containerName, imageName, volume)
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerName, imageName, volume string, envSlice []string) {
+	parent, writePipe := container.NewParentProcess(tty, containerName, imageName, volume, envSlice)
 	if parent == nil {
 		log.Errorf("New parent process error")
 		return
@@ -26,10 +26,12 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerN
 	if err := parent.Start(); err != nil {
 		log.Error(err)
 		return
-	} 
-	if containerName == "" {
-		containerName = "wyn"
 	}
+	containerID := randStringBytes(10)
+	if containerName == "" {
+		containerName = containerID
+	}
+	log.Infof("container name is %s", containerName) 
 
 	// 创建cgroup manager, 并通过调用set和apply设置资源限制并使限制在容器上生效
 	cgroupManager := cgroups.NewCgroupManager(containerName)
@@ -196,7 +198,7 @@ func logContainer(containerName string) {
 	fmt.Fprint(os.Stdout, string(content))
 }
 
-func getContainerPidByName(containerName string) (string, error) {
+func GetContainerPidByName(containerName string) (string, error) {
 	// 先拼接除存储容器信息的路径
 	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
 	configFilePath := dirURL + container.ConfigName
@@ -217,7 +219,7 @@ const ENV_EXEC_CMD = "paddle_cmd"
 
 func ExecContainer(containerName string, comArray []string) {
 	// 根据传递过来的容器名获取宿主机对应的PID
-	pid, err := getContainerPidByName(containerName)
+	pid, err := GetContainerPidByName(containerName)
 	if err != nil {
 		log.Errorf("Exec container getContainerPidByName %s error %v", containerName, err)
 		return
@@ -228,14 +230,35 @@ func ExecContainer(containerName string, comArray []string) {
 
 	// fork出一个进程, 获取环境变量
 	cmd := exec.Command("/proc/self/exe", "exec")
+	
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	os.Setenv(ENV_EXEC_PID, pid)
-	os.Setenv(ENV_EXEC_CMD, cmdStr)
+	err = os.Setenv(ENV_EXEC_PID, pid)
+	if err != nil {
+		log.Errorf("Set env error")
+	}
+	err = os.Setenv(ENV_EXEC_CMD, cmdStr)
+	if err != nil {
+		log.Errorf("Set env error")
+	}
+	containerEnvs := getEnvsByPid(pid)
+	cmd.Env = append(os.Environ(), containerEnvs...)
 
 	if err := cmd.Run(); err != nil {
 		log.Errorf("Exec container %s error %v", containerName, err)
 	}
+}
+
+func getEnvsByPid(pid string) []string  {
+	path := fmt.Sprintf("/proc/%s/environ", pid)
+	contentBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Errorf("Read file %s error %v", path, err)
+		return nil
+	}
+	// env spit by \u0000
+	envs := strings.Split(string(contentBytes), "\u0000")
+	return envs
 }

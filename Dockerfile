@@ -16,12 +16,11 @@ USER root
 ENV GOPATH /go
 ENV GOROOT /usr/local/go
 ENV PATH $PATH:/usr/local/go/bin
-WORKDIR ${GOPATH}
+WORKDIR /go/src/github.com/IsolationWyn/paddle 
 
 RUN go get -u github.com/go-delve/delve/cmd/dlv \
     && echo 'export PATH="$PATH:$GOROOT/bin:$GOBIN:/go/bin"' >> /root/.bashrc \
     && . /root/.bashrc \
     && cp -R busybox /root/busybox
 
-CMD ["dlv", "debug", "--headless", "--listen=:2345", "--log"]
 

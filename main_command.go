@@ -1,14 +1,15 @@
 package main
 
 import (
+	_ "github.com/IsolationWyn/paddle/nsenter"
 	"fmt"
 	"os"
-
 	"github.com/IsolationWyn/paddle/cgroups/subsystems"
 	"github.com/IsolationWyn/paddle/container"
 	"github.com/IsolationWyn/paddle/network"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	
 )
 
 var runCommand = cli.Command{
@@ -16,6 +17,10 @@ var runCommand = cli.Command{
 	Usage: `Create a container with namespace and cgroups limit
 			paddle run -ti [command]`,
 	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "n",
+			Usage: "container name",
+		},
 		cli.BoolFlag{
 			Name:  "ti",
 			Usage: "enable tty",
@@ -70,15 +75,16 @@ var runCommand = cli.Command{
 		volume := context.String("volume")
 		createTty := context.Bool("ti")
 		detach := context.Bool("d")
-		containerName := context.String("name")
+		containerName := context.String("n")
 		imageName := context.String("image")
-
+		envSlice := context.StringSlice("e")
 		if createTty && detach {
 			return fmt.Errorf("ti and d paramter can not both provided")
 		}
 		log.Infof("createTty %v", createTty)
+		
 
-		Run(createTty, cmdArray, resConf, containerName, imageName, volume)
+		Run(createTty, cmdArray, resConf, containerName, imageName, volume, envSlice)
 		return nil
 	},
 }
@@ -135,7 +141,7 @@ var execCommand = cli.Command{
 	Action: func(context *cli.Context) error {
 		// This is for callback
 		if os.Getenv(ENV_EXEC_PID) != "" {
-			log.Infof("pid callback pid %s", os.Getgid())
+			log.Infof("pid callback pid %d", os.Getgid())
 			return nil
 		}
 		if len(context.Args()) < 2 {
