@@ -152,7 +152,7 @@ func NewWorkSpace(volume, imageName, containerName string) {
 
 //Decompression tar image
 func CreateReadOnlyLayer(imageName string) error {
-	unTarFolderUrl := RootUrl
+	unTarFolderUrl := RootUrl + "/" + imageName + "/"
 	imageUrl := RootUrl + "/" + imageName + ".tar"
 	exist, err := PathExists(unTarFolderUrl)
 	if err != nil {
