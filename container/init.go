@@ -21,7 +21,7 @@ func RunContainerInitProcess() error {
 	init进程读取了父进程传递过来的参数后, 在子进程内进行了执行, 这样就完成了将用户指定命令传递给子进程的操作
 	*/
 	
-	setupMount()
+	setUpMount()
 
 	// 调用exec.LookPath, 可以在系统的PATH里面寻找命令的绝对路径
 	path, err := exec.LookPath(cmdArray[0])
