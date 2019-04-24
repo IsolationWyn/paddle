@@ -66,25 +66,32 @@ var runCommand = cli.Command{
 		for _, arg := range context.Args() {
 			cmdArray = append(cmdArray, arg)
 		}
+
+		imageName := cmdArray[0]
+		cmdArray = cmdArray[1:]
+
+		createTty := context.Bool("ti")
+		detach := context.Bool("d")
+		
+
+		if createTty && detach {
+			return fmt.Errorf("ti and d paramter can not both provided")
+		}
+		
 		resConf := &subsystems.ResourceConfig{
 			MemoryLimit: context.String("m"),
 			CpuSet:      context.String("cpuset"),
 			CpuShare:    context.String("cpushare"),
 		}
+		log.Infof("createTty %v", createTty)
 
 		volume := context.String("volume")
-		createTty := context.Bool("ti")
-		detach := context.Bool("d")
 		containerName := context.String("n")
-		imageName := context.String("image")
+		portmapping := context.StringSlice("p")
+		network := context.String("net")
 		envSlice := context.StringSlice("e")
-		if createTty && detach {
-			return fmt.Errorf("ti and d paramter can not both provided")
-		}
-		log.Infof("createTty %v", createTty)
-		
 
-		Run(createTty, cmdArray, resConf, containerName, imageName, volume, envSlice)
+		Run(createTty, cmdArray, resConf, containerName, imageName, volume, envSlice, network, portmapping)
 		return nil
 	},
 }
@@ -213,3 +220,31 @@ var networkCommand = cli.Command{
 		},
 	},
 }
+
+var stopCommand = cli.Command{
+	Name:  "stop",
+	Usage: "stop a container",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("Missing container name")
+		}
+		containerName := context.Args().Get(0)
+		stopContainer(containerName)
+		return nil
+	},
+}
+
+var removeCommand = cli.Command{
+	Name:  "rm",
+	Usage: "remove unused containers",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) < 1 {
+			return fmt.Errorf("Missing container name")
+		}
+		containerName := context.Args().Get(0)
+		removeContainer(containerName)
+		return nil
+	},
+}
+
+

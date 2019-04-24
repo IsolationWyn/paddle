@@ -1,5 +1,8 @@
 # 容器：提供一个与宿主机系统共享内核但与系统中的其它进程资源相隔离的执行环境
 
+# builder
+![](https://ws1.sinaimg.cn/large/006jGdC3gy1g2a1kzmpf5j313o18c483.jpg)
+
 # Proc
 ![](https://ws1.sinaimg.cn/large/006jGdC3ly1g2256tpp5fj30su0f8jyg.jpg)
 

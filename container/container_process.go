@@ -31,6 +31,7 @@ type ContainerInfo struct {
 	Command		string 	`json:command`  	// 容器内init进程的运行命令
 	CreatedTime string	`json:createTime`	// 创建时间
 	Status		string	`json:"status"`		// 容器的状态
+	Volume      string `json:"volume"`     //容器的数据卷
 	PortMapping []string `json:"portmapping"` //端口映射
 }
 
@@ -91,10 +92,9 @@ func NewParentProcess(tty bool, containerName, imageName, volume string, envSlic
 	// 一个进程默认有三个文件描述符(标准输入标准输出标准错误)
 	cmd.ExtraFiles = []*os.File{readPipe}
 	cmd.Env = append(os.Environ(), envSlice...)
-	mntURL := "/root/busybox/"
 	// TODO: rootURL := "/root/"
 	NewWorkSpace(volume, imageName, containerName)
-	cmd.Dir = mntURL
+	cmd.Dir = fmt.Sprintf(MntUrl, containerName)
 	return cmd, writePipe
 }
 

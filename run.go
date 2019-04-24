@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/IsolationWyn/paddle/network"
+	"syscall"
 	"os/exec"
 	"text/tabwriter"
 	"io/ioutil"
@@ -17,7 +19,15 @@ import (
 	"os"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerName, imageName, volume string, envSlice []string) {
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerName, imageName, volume string, envSlice []string, 
+	nw string, portmapping []string) {
+
+	containerID := randStringBytes(10)
+	if containerName == "" {
+		containerName = containerID
+	}
+	log.Infof("container name is %s", containerName) 
+
 	parent, writePipe := container.NewParentProcess(tty, containerName, imageName, volume, envSlice)
 	if parent == nil {
 		log.Errorf("New parent process error")
@@ -25,14 +35,16 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerN
 	}
 	if err := parent.Start(); err != nil {
 		log.Error(err)
+	}
+
+
+	// 记录容器信息
+	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName)
+	if err != nil {
+		log.Errorf("Record container info error %v", err)
 		return
 	}
-	containerID := randStringBytes(10)
-	if containerName == "" {
-		containerName = containerID
-	}
-	log.Infof("container name is %s", containerName) 
-
+		
 	// 创建cgroup manager, 并通过调用set和apply设置资源限制并使限制在容器上生效
 	cgroupManager := cgroups.NewCgroupManager(containerName)
 	defer cgroupManager.Destroy()
@@ -46,17 +58,28 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, containerN
 	// rootURL := "/root/"
 	// container.DeleteWorkSpace(rootURL, mntURL, volume)
 
-	// 记录容器信息
-	containerName, err := recordContainerInfo(parent.Process.Pid, cmdArray, containerName)
-	if err != nil {
-		log.Errorf("Record container info error %v", err)
-		return
+	if nw != "" {
+		// 配置容器网络
+		network.Init()
+		containerInfo := &container.ContainerInfo{
+			Id:				containerID,
+			Pid:			strconv.Itoa(parent.Process.Pid),
+			Name:			containerName,
+			PortMapping:	portmapping,
+		}
+		if err := network.Connect(nw, containerInfo); err != nil {
+			log.Errorf("Error Connect Network %v", err)
+			return
+		}
 	}
+
 	sendInitCommand(cmdArray, writePipe)
+
 	
 	if tty {
 		parent.Wait()
 		deleteContainerInfo(containerName)
+		container.DeleteWorkSpace(volume, containerName)
 	}
 }
 
@@ -261,4 +284,90 @@ func getEnvsByPid(pid string) []string  {
 	// env spit by \u0000
 	envs := strings.Split(string(contentBytes), "\u0000")
 	return envs
+}
+
+
+// stopContainer的主要步骤
+// 1. 获取容器PID
+// 2. 对该PID发送kill信号
+// 3. 修改容器信息
+// 4. 重新写入存储容器信息的文件
+
+func stopContainer(containerName string) {
+	// 根据容器名获取对应的主进程PID
+	pid, err := GetContainerPidByName(containerName)
+	if err != nil {
+		log.Errorf("Get contaienr pid by name %s error %v", containerName, err)
+		return
+	}
+	// 将string类型的PID转化成int类型
+	pidInt, err := strconv.Atoi(pid)
+	if err != nil {
+		log.Errorf("Conver pid from string to int error %v", err)
+		return
+	}
+	// 系统调用kill可以发送信号给进程, 通过传递syscall.SIGTERM信号, 去杀掉容器进程
+	if err := syscall.Kill(pidInt, syscall.SIGTERM); err != nil {
+		log.Errorf("Stop container %s error %v", containerName, err)
+		return
+	}
+
+	// 根据容器名获取对应的信息对象
+	containerInfo, err := getContainerInfoByName(containerName)
+	if err != nil {
+		log.Errorf("Get container %s info error %v", containerName, err)
+		return
+	}
+
+	// 至此, 容器进程已经被kill, 所以下面需要修改容器状态, PID可以置空
+	containerInfo.Status = container.STOP
+	containerInfo.Pid = " "
+	// 将修改后的信息序列化成json的字符串
+	newContentBytes, err := json.Marshal(containerInfo)
+	if err != nil {
+		log.Errorf("Json marshal %s error %v", containerName, err)
+		return
+	}
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
+	configFilePath := dirURL + container.ConfigName
+	// 重新写入新的数据覆盖原来的信息
+	if err := ioutil.WriteFile(configFilePath, newContentBytes, 0622); err != nil {
+		log.Errorf("Write file %s error", configFilePath, err)
+	}
+}
+
+func getContainerInfoByName(containerName string) (*container.ContainerInfo, error) {
+	// 构造存放容器对应的struct结构
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
+	configFilePath := dirURL + container.ConfigName
+	contentBytes, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		log.Errorf("Read file %s error %v", configFilePath, err)
+		return nil, err
+	}
+	var containerInfo container.ContainerInfo
+	// 将容器信息字符串反序列化成对应的对象
+	if err := json.Unmarshal(contentBytes, &containerInfo); err != nil {
+		log.Errorf("GetContainerInfoByName unmarshal error %v", err)
+		return nil, err
+	}
+	return &containerInfo, nil
+}
+
+func removeContainer(containerName string) {
+	containerInfo, err := getContainerInfoByName(containerName)
+	if err != nil {
+		log.Errorf("Get container %s info error %v", containerName, err)
+		return
+	}
+	if containerInfo.Status != container.STOP {
+		log.Errorf("Couldn't remove running container")
+		return
+	}
+	dirURL := fmt.Sprintf(container.DefaultInfoLocation, containerName)
+	if err := os.RemoveAll(dirURL); err != nil {
+		log.Errorf("Remove file %s error %v", dirURL, err)
+		return
+	}
+	container.DeleteWorkSpace(containerInfo.Volume, containerName)
 }
