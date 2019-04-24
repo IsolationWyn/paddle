@@ -20,8 +20,8 @@ run:
 	./$(BINARY_NAME) run -ti sh
 
 # Cross compilation
-build-linux:
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) -v
+dbuild:
+    
 drun:
 	docker run -it --net=host -v "/Users/wyn/Library/Mobile Documents/com~apple~CloudDocs/Daocloud/GOProject/src/github.com/IsolationWyn/paddle":/go/src/github.com/IsolationWyn/paddle  --privileged=true registry.cn-qingdao.aliyuncs.com/wisati/paddle  bash 
 dexec:

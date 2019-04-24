@@ -137,90 +137,60 @@ func NewWorkSpace(volume, imageName, containerName string) {
 	CreateReadOnlyLayer(imageName)
 	CreateWriteLayer(containerName)
 	CreateMountPoint(containerName, imageName)
-	if (volume != "") {
-		volumeURLs := volumeUrlExtract(volume)
+	if volume != "" {
+		volumeURLs := strings.Split(volume, ":")
 		length := len(volumeURLs)
-		if(length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "") {
+		if length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "" {
 			MountVolume(volumeURLs, containerName)
-			log.Infof("%q", volumeURLs)
+			log.Infof("NewWorkSpace volume urls %q", volumeURLs)
 		} else {
 			log.Infof("Volume parameter input is not correct.")
 		}
 	}
 }
 
-func volumeUrlExtract(volume string)([]string) {
-	var volumeURLs []string
-	volumeURLs = strings.Split(volume, ":")
-	return volumeURLs
-}
 
-func CreateReadOnlyLayer(rootURL string) {
-	busyboxURL := rootURL + "/busybox"
-	busyboxTarURL := rootURL + "/busybox.tar"
-	exist, err := PathExists(busyboxURL)
-
+//Decompression tar image
+func CreateReadOnlyLayer(imageName string) error {
+	unTarFolderUrl := RootUrl + "/" + imageName + "/"
+	imageUrl := RootUrl + "/" + imageName + ".tar"
+	exist, err := PathExists(unTarFolderUrl)
 	if err != nil {
-		log. Infof ("Fail to judge whether dir %s exists . %v", busyboxURL, err)
+		log.Infof("Fail to judge whether dir %s exists. %v", unTarFolderUrl, err)
+		return err
 	}
-	if exist == false {
-		if err := os.Mkdir(busyboxURL, 0777); err != nil {
-			log.Errorf ("Mkdir busybox dir %s error. %v", busyboxURL, err)
+	if !exist {
+		if err := os.MkdirAll(unTarFolderUrl, 0622); err != nil {
+			log.Errorf("Mkdir %s error %v", unTarFolderUrl, err)
+			return err
 		}
-		if _, err := exec.Command("tar", "-xvf", busyboxTarURL, "-C", busyboxURL).CombinedOutput(); err != nil {
-			log.Errorf("Untar dir %s error %v", busyboxURL, err)
-		}
-	}
-}
 
-func CreateWriteLayer(rootURL string) {
-	writeURL := rootURL + "/writeLayer"
-	if err := os.Mkdir(writeURL, 0777); err != nil {
-		log.Infof("Mkdir dir %s error. %v", writeURL, err)
-	}
-}
-
-func CreateMountPoint(rootURL string, mntURL string) {
-	if err := os.Mkdir(mntURL, 0777); err != nil {
-		log.Infof("Mkdir mountpoint dir %s error. %v", mntURL, err)
-	}
-	dirs := "dirs=" + rootURL + "/writeLayer:" + rootURL + "/busybox"
-	cmd := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", mntURL)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		log.Errorf("Mount mountpoint dir failed. %v", err)
-	}
-}
-
-func PathExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err == nil {
-		if os.IsNotExist(err) {
-			return false, err
+		if _, err := exec.Command("tar", "-xvf", imageUrl, "-C", unTarFolderUrl).CombinedOutput(); err != nil {
+			log.Errorf("Untar dir %s error %v", unTarFolderUrl, err)
+			return err
 		}
 	}
-	return true, nil
+	return nil
 }
 
-// 挂载数据卷的过程
-// 1. 首先, 读取宿主机文件目录URL, 创建宿主机文件目录(/root/${parentURL})
-// 2. 然后, 读取容器挂载点URL, 在容器文件系统里创建挂载点(/root/mnt/${containerUrl})
-// 3. 最后, 把宿主机文件目录挂载到容器挂载点, 这样启动容器
+func CreateWriteLayer(containerName string) {
+	writeURL := fmt.Sprintf(WriteLayerUrl, containerName)
+	if err := os.MkdirAll(writeURL, 0777); err != nil {
+		log.Infof("Mkdir write layer dir %s error. %v", writeURL, err)
+	}
+}
 
 func MountVolume(volumeURLs []string, containerName string) error {
-	// 创建宿主机文件目录
 	parentUrl := volumeURLs[0]
 	if err := os.Mkdir(parentUrl, 0777); err != nil {
 		log.Infof("Mkdir parent dir %s error. %v", parentUrl, err)
 	}
-	// 在容器文件系统里创建挂载点
 	containerUrl := volumeURLs[1]
 	mntURL := fmt.Sprintf(MntUrl, containerName)
 	containerVolumeURL := mntURL + "/" +  containerUrl
 	if err := os.Mkdir(containerVolumeURL, 0777); err != nil {
 		log.Infof("Mkdir container dir %s error. %v", containerVolumeURL, err)
 	}
-	// 把宿主机文件目录挂载到容器挂载点
 	dirs := "dirs=" + parentUrl
 	_, err := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", containerVolumeURL).CombinedOutput()
 	if err != nil {
@@ -230,11 +200,25 @@ func MountVolume(volumeURLs []string, containerName string) error {
 	return nil
 }
 
-// Docker 会在删除容器的时候, 把容器对应的Write Layer 和 Container-init Layer删除, 而保留镜像所有的内容。
-// 首先, 在DeleteMountPoint函数中 umount mnt函数
-// 然后, 删除mnt目录
-// 最后, 在DeleteWriteLayer函数中删除writeLayer文件夹, 这样容器对文件系统的更改就都已经抹去了
+func CreateMountPoint(containerName , imageName string) error {
+	mntUrl := fmt.Sprintf(MntUrl, containerName)
+	if err := os.MkdirAll(mntUrl, 0777); err != nil {
+		log.Errorf("Mkdir mountpoint dir %s error. %v", mntUrl, err)
+		return err
+	}
+	tmpWriteLayer := fmt.Sprintf(WriteLayerUrl, containerName)
+	tmpImageLocation := RootUrl + "/" + imageName
+	mntURL := fmt.Sprintf(MntUrl, containerName)
+	dirs := "dirs=" + tmpWriteLayer + ":" + tmpImageLocation
+	_, err := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", mntURL).CombinedOutput()
+	if err != nil {
+		log.Errorf("Run command for creating mount point failed %v", err)
+		return err
+	}
+	return nil
+}
 
+//Delete the AUFS filesystem while container exit
 func DeleteWorkSpace(volume, containerName string) {
 	if volume != "" {
 		volumeURLs := strings.Split(volume, ":")
@@ -245,16 +229,6 @@ func DeleteWorkSpace(volume, containerName string) {
 	}
 	DeleteMountPoint(containerName)
 	DeleteWriteLayer(containerName)
-}
-
-func DeleteVolume(volumeURLs []string, containerName string) error {
-	mntURL := fmt.Sprintf(MntUrl, containerName)
-	containerUrl := mntURL + "/" +  volumeURLs[1]
-	if _, err := exec.Command("umount", containerUrl).CombinedOutput(); err != nil {
-		log.Errorf("Umount volume %s failed. %v", containerUrl, err)
-		return err
-	}
-	return nil
 }
 
 func DeleteMountPoint(containerName string) error {
@@ -271,9 +245,30 @@ func DeleteMountPoint(containerName string) error {
 	return nil
 }
 
-func DeleteWriteLayer(rootURL string) {
-	writeURL := rootURL + "/writeLayer"
-	if err := os.RemoveAll(writeURL); err != nil {
-		log.Errorf("Remove writeLayer dir %s error %v", writeURL, err)
+func DeleteVolume(volumeURLs []string, containerName string) error {
+	mntURL := fmt.Sprintf(MntUrl, containerName)
+	containerUrl := mntURL + "/" +  volumeURLs[1]
+	if _, err := exec.Command("umount", containerUrl).CombinedOutput(); err != nil {
+		log.Errorf("Umount volume %s failed. %v", containerUrl, err)
+		return err
 	}
+	return nil
+}
+
+func DeleteWriteLayer(containerName string) {
+	writeURL := fmt.Sprintf(WriteLayerUrl, containerName)
+	if err := os.RemoveAll(writeURL); err != nil {
+		log.Infof("Remove writeLayer dir %s error %v", writeURL, err)
+	}
+}
+
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
