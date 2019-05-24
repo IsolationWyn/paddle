@@ -137,12 +137,12 @@ func NewWorkSpace(volume, imageName, containerName string) {
 	CreateReadOnlyLayer(imageName)
 	CreateWriteLayer(containerName)
 	CreateMountPoint(containerName, imageName)
-	if volume != "" {
-		volumeURLs := strings.Split(volume, ":")
+	if (volume != "") {
+		volumeURLs := volumeUrlExtract(volume)
 		length := len(volumeURLs)
-		if length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "" {
+		if(length == 2 && volumeURLs[0] != "" && volumeURLs[1] != "") {
 			MountVolume(volumeURLs, containerName)
-			log.Infof("NewWorkSpace volume urls %q", volumeURLs)
+			log.Infof("%q", volumeURLs)
 		} else {
 			log.Infof("Volume parameter input is not correct.")
 		}
